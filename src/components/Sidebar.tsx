@@ -8,9 +8,12 @@ import {
   BarChart,
   Wrench,
   LogOut,
+  Menu,
+  ChevronLeft,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 const navItems = [
   { name: "Dashboard", icon: Home, href: "/dashboard" },
@@ -24,24 +27,38 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <aside className="w-64 h-screen bg-gray-1000 text-gray-500 p-4 flex flex-col">
-      {/* Header avec Logo + Titre */}
-      <div className="flex flex-col items-center mb-8">
-        <img
-          className="rounded-full mb-2"
-          src="https://pfst.cf2.poecdn.net/base/image/64c3850b614193d3055da1fa4d03ac86fc68f7315418746e6ffabd98e01f8064?w=1024&h=768&pmaid=392086489"
-          alt="Système de Surveillance"
-          width={80}
-          height={80}
-        />
-        <h1 className="text-lg font-bold text-gray-400 text-center">
-          <strong>Système</strong> de Surveillance
-        </h1>
+    <aside
+      className={`${
+        collapsed ? "w-20" : "w-64"
+      } h-screen bg-gray-950 text-gray-500 px-4 py-6 flex flex-col fixed left-0 top-0 z-40 transition-all duration-300`}
+    >
+      {/* Toggle Collapse Button */}
+        <div className="flex flex-row items-center mb-8">
+        {!collapsed && (
+          <>
+            <img
+              className="rounded-full mb-2"
+              src="https://pfst.cf2.poecdn.net/base/image/64c3850b614193d3055da1fa4d03ac86fc68f7315418746e6ffabd98e01f8064?w=1024&h=768&pmaid=392086489"
+              alt="Système de Surveillance"
+              width={70}
+              height={80}
+            />
+            <h1 className="text-lg font-bold text-gray-400 text-center">
+              <strong>Système</strong> de Surveillance
+            </h1>
+          </>
+        )}
       </div>
-      
-      {/* Navigation */}
+      <button
+        className="text-gray-400 hover:text-white"
+        onClick={() => setCollapsed(!collapsed)}
+      >
+        {collapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
+      </button>
+
       <nav className="flex flex-col gap-4">
         {navItems.map(({ name, icon: Icon, href }) => (
           <Link
@@ -52,7 +69,7 @@ export default function Sidebar() {
             }`}
           >
             {Icon ? <Icon size={20} /> : <span>🛠️</span>}
-            <span>{name}</span>
+            {!collapsed && <span>{name}</span>}
           </Link>
         ))}
       </nav>
