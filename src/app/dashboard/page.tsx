@@ -75,7 +75,7 @@ export default function DashboardPage() {
   return (
     <>
       <Header title="Dashboard" />
-      <main className="p-6 text-white border-l-1 border-gray-800">
+      <main className="p-6 text-white w-full h-full">
         <section className="mb-10">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">État des Réseaux</h2>
@@ -91,7 +91,7 @@ export default function DashboardPage() {
         </section>
         <section className="mb-10">
           <h2 className="text-2xl font-bold mb-6">Outils Réseaux</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 h- sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <NetworkToolCard title="Adresse IP"
               description="Renseigner une IP cible ou un domaine"
               icon={<Globe className="text-white" />}
