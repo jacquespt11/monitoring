@@ -2,6 +2,16 @@
 
 import { useState } from "react";
 import { Wifi, Clock, Trash2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+function Skeleton({ height }: { height: number }) {
+  return (
+    <div
+      style={{ height, backgroundColor: "#27272a", borderRadius: 4 }}
+      className="w-full animate-pulse mb-1"
+    />
+  );
+}
 
 type PingResult = {
   id: number;
@@ -84,28 +94,53 @@ export default function PingPage() {
           />
         </div>
 
-        <button
+        <motion.button
           type="submit"
           disabled={loading}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
         >
           {loading ? "Ping en cours..." : "Lancer le ping"}
-        </button>
+        </motion.button>
       </form>
-
-      {result && (
-        <div className="bg-gray-950 border border-gray-800 p-5 rounded-lg text-green-400">
-          {result}
+      {loading && (
+        <div className="space-y-2 mt-4">
+          <Skeleton height={40} />
+          <Skeleton height={40} />
+          <Skeleton height={40} />
         </div>
       )}
-      {error && (
-        <div className="bg-gray-950 border border-gray-800 p-5 rounded-lg text-red-400">
-          {error}
-        </div>
-      )}
+      <AnimatePresence>
+        {result && (
+          <motion.div
+            key="success"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-gray-950 border border-gray-800 p-5 rounded-lg text-green-400"
+          >
+            {result}
+          </motion.div>
+        )}
+        {error && (
+          <motion.div
+            key="error"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-gray-950 border border-gray-800 p-5 rounded-lg text-red-400"
+          >
+            {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {history.length > 0 && (
-        <div className="bg-gray-950 border border-gray-800 p-5 rounded-lg space-y-4">
+        <motion.div
+          layout
+          className="bg-gray-950 border border-gray-800 p-5 rounded-lg space-y-4"
+        >
           <div className="flex justify-between items-center mb-2">
             <div className="flex items-center gap-2 text-white">
               <Clock size={18} />
@@ -119,29 +154,36 @@ export default function PingPage() {
             </button>
           </div>
 
-          <ul className="space-y-2">
-            {history.map((h) => (
-              <li
-                key={h.id}
-                className={`p-3 rounded border ${
-                  h.success
-                    ? "border-green-600 bg-green-900/20 text-green-300"
-                    : "border-red-600 bg-red-900/20 text-red-300"
-                }`}
-              >
-                <div className="flex justify-between">
-                  <span>{h.target}</span>
-                  <span className="text-xs">{h.timestamp}</span>
-                </div>
-                <div className="text-sm">
-                  {h.success
-                    ? `✔ ${h.responseTime} ms`
-                    : "✖ Échec du ping"}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+          <motion.ul layout className="space-y-2">
+            <AnimatePresence>
+              {history.map((h) => (
+                <motion.li
+                  key={h.id}
+                  layout
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                  className={`p-3 rounded border ${
+                    h.success
+                      ? "border-green-600 bg-green-900/20 text-green-300"
+                      : "border-red-600 bg-red-900/20 text-red-300"
+                  }`}
+                >
+                  <div className="flex justify-between">
+                    <span>{h.target}</span>
+                    <span className="text-xs">{h.timestamp}</span>
+                  </div>
+                  <div className="text-sm">
+                    {h.success
+                      ? `✔ ${h.responseTime} ms`
+                      : "✖ Échec du ping"}
+                  </div>
+                </motion.li>
+              ))}
+            </AnimatePresence>
+          </motion.ul>
+        </motion.div>
       )}
     </div>
   );

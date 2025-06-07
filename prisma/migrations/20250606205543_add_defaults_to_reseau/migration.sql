@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Reseau" ALTER COLUMN "statut" SET DEFAULT 'Inconnu',
+ALTER COLUMN "temps" SET DEFAULT 'N/A',
+ALTER COLUMN "test" SET DEFAULT 'Jamais testé',
+ALTER COLUMN "test" SET DATA TYPE TEXT;

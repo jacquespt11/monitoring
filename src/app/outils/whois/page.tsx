@@ -1,152 +1,121 @@
 "use client";
 
 import { useState } from "react";
-import { FileSearch, Trash2 } from "lucide-react";
+import { Network, Trash2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
-type WhoisResult = {
+type WhoisEntry = {
   id: number;
   domain: string;
   timestamp: string;
-  data: {
-    owner: string;
-    registrar: string;
-    creationDate: string;
-    expirationDate: string;
-    status: string;
-  };
+  data?: Record<string, any>;
+  error?: string;
 };
 
 export default function WhoisPage() {
-  const [domain, setDomain] = useState("");
-  const [results, setResults] = useState<WhoisResult[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [input, setInput] = useState("");
+  const [entries, setEntries] = useState<WhoisEntry[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const simulateWhois = (): WhoisResult["data"] => {
-    return {
-      owner: "Perfect Tshibangu (Simulation)",
-      registrar: "NameCheap, Inc.",
-      creationDate: "2020-05-18",
-      expirationDate: "2025-05-18",
-      status: "active",
-    };
-  };
-
-  const handleWhois = (e: React.FormEvent) => {
+  const handleWhois = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setLoading(true);
 
-    if (!domain.trim() || !/^[a-zA-Z0-9.-]+\.[a-z]{2,}$/.test(domain)) {
-      setError("Veuillez entrer un nom de domaine valide (ex: example.com)");
-      return;
+    const timestamp = new Date().toLocaleString();
+    const entry: WhoisEntry = { id: Date.now(), domain: input, timestamp };
+
+    try {
+      const res = await fetch("/api/whois", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain: input }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        entry.error = data.error || "Erreur WHOIS";
+      } else {
+        entry.data = data.data;
+      }
+    } catch (e: any) {
+      entry.error = "Erreur réseau / API WHOIS";
     }
 
-    const newResult: WhoisResult = {
-      id: Date.now(),
-      domain,
-      timestamp: new Date().toLocaleString(),
-      data: simulateWhois(),
-    };
-
-    setResults((prev) => [newResult, ...prev]);
-    setDomain("");
+    setEntries((prev) => [entry, ...prev]);
+    setInput("");
+    setLoading(false);
   };
 
-  const clearResults = () => setResults([]);
+  const clearHistory = () => setEntries([]);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 p-6">
       <div className="flex items-center gap-3 mb-4">
-        <FileSearch size={28} className="text-blue-400" />
-        <h1 className="text-2xl font-bold text-white">Analyse WHOIS</h1>
+        <Network size={28} className="text-purple-400" />
+        <h1 className="text-2xl font-bold text-white">Whois</h1>
       </div>
-
-      <p className="text-gray-400">
-        Consultez les informations d’enregistrement d’un nom de domaine. Cela vous permet
-        de connaître le propriétaire, le registrar et les dates importantes.
+      <p className="text-gray-300">
+        Entrez un nom de domaine pour obtenir des informations WHOIS.
       </p>
-
       <form
         onSubmit={handleWhois}
-        className="bg-gray-900 border border-gray-800 p-5 rounded-lg space-y-4"
+        className="bg-gray-900 border border-gray-800 p-5 rounded-lg flex gap-2"
       >
-        <div className="space-y-2">
-          <label htmlFor="domain" className="text-sm text-gray-300">
-            Nom de domaine
-          </label>
-          <input
-            id="domain"
-            type="text"
-            required
-            value={domain}
-            onChange={(e) => setDomain(e.target.value)}
-            placeholder="ex: example.com"
-            className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 text-white"
-          />
-        </div>
-
-        <button
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="ex: example.com"
+          required
+          className="flex-1 px-4 py-2 rounded bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+        />
+        <motion.button
           type="submit"
-          className="bg-blue-500 text-black px-6 py-2 rounded hover:bg-blue-600 transition"
+          disabled={loading}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="bg-purple-600 text-white px-6 py-2 rounded disabled:opacity-50"
         >
-          Analyser
-        </button>
+          {loading ? "Chargement..." : "Analyser"}
+        </motion.button>
       </form>
 
-      {error && (
-        <div className="bg-red-900 text-red-300 border border-red-700 p-4 rounded">
-          {error}
-        </div>
-      )}
-
-      {results.length > 0 && (
-        <div className="bg-gray-950 border border-gray-800 p-5 rounded-lg space-y-6">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-white font-semibold text-lg">Historique des WHOIS</h2>
-            <button
-              onClick={clearResults}
-              className="flex items-center gap-1 text-sm text-red-400 hover:text-red-600"
-            >
-              <Trash2 size={14} /> Vider
-            </button>
-          </div>
-
-          {results.map((res) => (
-            <div key={res.id} className="space-y-2">
-              <div className="text-white font-semibold">
-                {res.domain} —{" "}
-                <span className="text-xs text-gray-400">{res.timestamp}</span>
-              </div>
-              <div className="text-sm text-gray-300 space-y-1">
-                <div>
-                  <strong>Propriétaire:</strong> {res.data.owner}
-                </div>
-                <div>
-                  <strong>Registrar:</strong> {res.data.registrar}
-                </div>
-                <div>
-                  <strong>Créé le:</strong> {res.data.creationDate}
-                </div>
-                <div>
-                  <strong>Expire le:</strong> {res.data.expirationDate}
-                </div>
-                <div>
-                  <strong>Statut:</strong>{" "}
-                  <span
-                    className={
-                      res.data.status === "active"
-                        ? "text-green-400"
-                        : "text-yellow-400"
-                    }
-                  >
-                    {res.data.status}
-                  </span>
-                </div>
-              </div>
-              <hr className="border-gray-700 mt-3" />
+      <AnimatePresence>
+        {entries.map((e, idx) => (
+          <motion.div
+            key={e.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-gray-950 border border-gray-800 p-5 rounded-lg space-y-3"
+          >
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-white">{e.domain}</span>
+              <span className="text-xs text-gray-400">{e.timestamp}</span>
             </div>
-          ))}
-        </div>
-      )}
+
+            {e.error ? (
+              <div className="text-red-400">{e.error}</div>
+            ) : (
+              <div className="text-sm text-gray-300 space-y-1">
+                {Object.entries(e.data!).slice(0, 6).map(([key, val]) => (
+                  <div key={key}>
+                    <strong>{key}:</strong> {String(val)}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {idx === entries.length - 1 && entries.length > 1 && (
+              <button
+                onClick={clearHistory}
+                className="mt-2 text-sm text-red-400 hover:text-red-600 flex items-center gap-1"
+              >
+                <Trash2 size={14} /> Vider l'historique
+              </button>
+            )}
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 }

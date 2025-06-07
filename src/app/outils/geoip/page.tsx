@@ -1,8 +1,51 @@
 "use client";
 
 import { Globe2 } from "lucide-react";
+import { useState } from "react";
+import { motion } from "framer-motion";
+
+function Skeleton({ height }: { height: number }) {
+  return (
+    <div
+      style={{ height, backgroundColor: "#27272a", borderRadius: 4 }}
+      className="w-full animate-pulse mb-1"
+    />
+  );
+}
 
 export default function GeoIpPage() {
+  const [ip, setIp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState<any>(null);
+  const [history, setHistory] = useState<any[]>([]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    setResult(null);
+
+    try {
+      const res = await fetch("/api/geoip", {
+        method: "POST",
+        body: JSON.stringify({ ip }),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        setError(data.error || "Erreur inattendue.");
+      } else {
+        setResult(data.data);
+        setHistory((prev) => [{ ip, data: data.data }, ...prev.slice(0, 4)]);
+      }
+    } catch (err) {
+      setError("Erreur de connexion serveur.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-3 mb-4">
@@ -11,17 +54,10 @@ export default function GeoIpPage() {
       </div>
 
       <p className="text-gray-400">
-        Entrez une adresse IP pour localiser géographiquement sa provenance. Cet outil fournit des
-        informations comme le pays, la ville, le fournisseur d'accès, etc.
+        Entrez une adresse IP pour localiser géographiquement sa provenance.
       </p>
 
-      <form
-        className="bg-gray-900 border border-gray-800 p-5 rounded-lg space-y-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          // future intégration API ici
-        }}
-      >
+      <form onSubmit={handleSubmit} className="bg-gray-900 p-5 rounded-lg border border-gray-800 space-y-4">
         <div className="space-y-2">
           <label htmlFor="ip" className="text-sm text-gray-300">
             Adresse IP
@@ -31,32 +67,59 @@ export default function GeoIpPage() {
             type="text"
             required
             placeholder="ex: 8.8.8.8"
+            value={ip}
+            onChange={(e) => setIp(e.target.value)}
             className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
 
         <button
           type="submit"
+          disabled={loading}
           className="bg-green-500 text-black px-6 py-2 rounded hover:bg-green-600 transition"
         >
-          Localiser
+          {loading ? "Chargement..." : "Localiser"}
         </button>
-      </form>
 
-      {/* Résultats simulés */}
-      <div className="bg-gray-950 border border-gray-800 p-5 rounded-lg space-y-2">
-        <h2 className="text-lg text-white font-semibold mb-3">Résultat simulé</h2>
-        <div className="text-sm text-green-400 space-y-1">
-          <div><strong>Adresse IP :</strong> 8.8.8.8</div>
-          <div><strong>Pays :</strong> United States</div>
-          <div><strong>Région :</strong> California</div>
-          <div><strong>Ville :</strong> Mountain View</div>
-          <div><strong>Latitude / Longitude :</strong> 37.4056 / -122.0775</div>
-          <div><strong>Fuseau horaire :</strong> America/Los_Angeles</div>
-          <div><strong>Fournisseur d'accès :</strong> Google LLC</div>
-          <div><strong>Horodatage :</strong> 2025-06-05 17:04:40</div>
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+      </form>
+      {loading && (
+        <div className="space-y-2 mt-4">
+          <Skeleton height={20} />
+          <Skeleton height={20} />
+          <Skeleton height={20} />
         </div>
-      </div>
+      )}
+      {result && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gray-950 border border-gray-800 p-5 rounded-lg space-y-2"
+        >
+          <h2 className="text-lg text-white font-semibold mb-3">Résultat</h2>
+          <div className="text-sm text-green-400 space-y-1">
+            <div><strong>IP :</strong> {ip}</div>
+            <div><strong>Pays :</strong> {result.country}</div>
+            <div><strong>Région :</strong> {result.region}</div>
+            <div><strong>Ville :</strong> {result.city}</div>
+            <div><strong>Latitude / Longitude :</strong> {result.ll?.join(" / ")}</div>
+            <div><strong>Fournisseur :</strong> {result.org || "Non spécifié"}</div>
+          </div>
+        </motion.div>
+      )}
+
+      {history.length > 0 && (
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 mt-4">
+          <h3 className="text-white font-semibold mb-2">Historique</h3>
+          <ul className="text-sm text-gray-400 space-y-1">
+            {history.map((entry, index) => (
+              <li key={index}>
+                <strong>{entry.ip}</strong> - {entry.data.country}, {entry.data.city}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

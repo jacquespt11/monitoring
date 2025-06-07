@@ -1,20 +1,51 @@
 import { NextResponse } from "next/server";
+import { exec } from "child_process";
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const target = searchParams.get("target");
+export const dynamic = "force-dynamic"; // Requis pour App Router
 
-  if (!target) {
-    return NextResponse.json({ message: "Cible invalide." }, { status: 400 });
-  }
+// ⏱ Exécuter une commande avec un timeout
+const execWithTimeout = (cmd: string, timeoutMs = 5000): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const child = exec(cmd, { timeout: timeoutMs }, (error, stdout, stderr) => {
+      if (error) {
+        reject(stderr || error.message);
+      } else {
+        resolve(stdout);
+      }
+    });
 
+    // Si timeout manuel voulu : setTimeout(() => child.kill(), timeoutMs);
+  });
+};
+
+export async function POST(req: Request) {
   try {
-    // On simule un ping par un simple fetch HEAD
-    const res = await fetch(`https://${target}`, { method: "HEAD", cache: "no-store" });
-    if (!res.ok) throw new Error("Réponse non valide");
+    const { host } = await req.json();
 
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    return NextResponse.json({ message: "Échec de la connexion." }, { status: 500 });
+    if (!host || typeof host !== "string" || host.length > 100) {
+      return NextResponse.json(
+        { success: false, error: "Hôte invalide." },
+        { status: 400 }
+      );
+    }
+
+    const safeHost = host.replace(/[^a-zA-Z0-9\.\-]/g, "");
+
+    // Limite à 4 paquets pour aller vite
+    const cmd = process.platform === "win32"
+      ? `ping -n 2 ${safeHost}`
+      : `ping -c 2 -W 3 ${safeHost}`;
+
+    const output = await execWithTimeout(cmd, 5000);
+
+    return NextResponse.json({
+      success: true,
+      output,
+    });
+  } catch (err: any) {
+    return NextResponse.json(
+      { success: false, error: "Échec du ping ou hôte injoignable." },
+      { status: 500 }
+    );
   }
 }

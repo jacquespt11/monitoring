@@ -10,15 +10,24 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
+    "@prisma/client": "^6.9.0",
     "@tailwindcss/cli": "^4.1.8",
     "apexcharts": "^4.7.0",
+    "axios": "^1.9.0",
+    "framer-motion": "^12.16.0",
+    "geoip-lite": "^1.4.10",
     "lucide-react": "^0.511.0",
     "next": "15.3.3",
+    "pdf-lib": "^1.17.1",
     "react": "^19.0.0",
     "react-apexcharts": "^1.7.0",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.2",
-    "recharts": "^2.15.3"
+    "react-icons": "^5.5.0",
+    "recharts": "^2.15.3",
+    "ssl-checker": "^2.0.10",
+    "swr": "^2.3.3",
+    "whois-json": "^2.0.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -28,6 +37,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
+    "prisma": "^6.9.0",
     "tailwindcss": "^4.1.8",
     "typescript": "^5"
   }
