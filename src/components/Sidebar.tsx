@@ -7,13 +7,13 @@ import {
   AlertCircle,
   BarChart,
   Wrench,
-  LogOut,
   Menu,
   ChevronLeft,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import AuthButton from "./AuthButton";
 
 const navItems = [
   { name: "Dashboard", icon: Home, href: "/dashboard" },
@@ -22,7 +22,6 @@ const navItems = [
   { name: "Statistiques", icon: BarChart, href: "/statistiques" },
   { name: "Alertes", icon: AlertCircle, href: "/alertes" },
   { name: "Paramètres", icon: Settings, href: "/parametres" },
-  { name: "Déconnexion", icon: LogOut, href: "/logout" },
 ];
 
 export default function Sidebar() {
@@ -72,6 +71,10 @@ export default function Sidebar() {
             {!collapsed && <span>{name}</span>}
           </Link>
         ))}
+        {/* AuthButton personnalisé */}
+          <div className="mt-6 px-3">
+            <AuthButton />
+          </div>
       </nav>
     </aside>
   );

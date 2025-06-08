@@ -1,3 +1,4 @@
+"use client";
 import Header from "@/components/Header";
 import NetworkCard from "@/components/NetworkCard";
 import ChartCard from "@/components/ChartCard";
@@ -7,6 +8,8 @@ import PingCard from "@/components/PingCard";
 import TracerouteCard from "@/components/TracerouteCard";
 import DnsLookupCard from "@/components/DnsLookupCard";
 import PortScanCard from "@/components/PortScanCard";
+import { getAuthSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 
 const latencyData = [
@@ -71,7 +74,12 @@ const networks: {
   },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const session = await getAuthSession();
+
+  if (!session) {
+    redirect("/api/auth/signin");
+  }
   return (
     <>
       <Header title="Dashboard" />

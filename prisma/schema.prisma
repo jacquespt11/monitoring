@@ -10,10 +10,69 @@ datasource db {
 model Reseau {
   id     Int      @id @default(autoincrement())
   nom    String
-  ip     String String
+  ip     String
   statut String @default("Inconnu")
   temps  String? @default("N/A")
   test   String @default("Jamais testé")
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime? @updatedAt
+}
+
+model Traffic {
+  id      Int    @id @default(autoincrement())
+  jour    String
+  valeur  Int
+  createdAt DateTime @default(now())
+}
+
+model Alerte {
+  id      Int    @id @default(autoincrement())
+  jour    String
+  total   Int
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String?  @db.VarChar(255)
+  email         String?  @unique @db.VarChar(255)
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Account {
+  id                 Int      @id @default(autoincrement())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }

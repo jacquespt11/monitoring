@@ -1,66 +1,60 @@
 "use client";
-import { Metadata } from "next";
-import { BarChart3, Activity, AlertTriangle } from "lucide-react";
 import dynamic from "next/dynamic";
-import { ApexOptions } from "apexcharts";
+import useSWR from "swr";
+import { BarChart3, Activity, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
+import { ClipLoader } from "react-spinners";
+import type { ApexOptions } from "apexcharts";
 
-
-// Chargement dynamique du composant Chart pour éviter les problèmes SSR
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 export default function StatistiquesPage() {
-  // Données simulées pour les graphiques
+  const { data, error, isLoading } = useSWR("/api/statistiques", fetcher);
+
+  if (error) {
+    toast.error("Erreur lors du chargement des statistiques !");
+    return <p className="text-red-500 p-4">Erreur de chargement.</p>;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <ClipLoader size={45} color="#4ade80" />
+      </div>
+    );
+  }
+
   const trafficData = {
     series: [
       {
         name: "Trafic (Mbps)",
-        data: [120, 200, 150, 80, 70, 110, 130],
+        data: data?.traffic.map((t: any) => t.valeur) || [],
       },
     ],
     options: {
-      chart: {
-        type: "line" as const,
-        height: 350,
-        toolbar: {
-          show: false,
-        },
-      },
-      xaxis: {
-        categories: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
-      },
+      chart: { type: "line", height: 350, toolbar: { show: false } },
+      xaxis: { categories: data?.traffic.map((t: any) => t.jour) || [] },
       colors: ["#4ade80"],
-      stroke: {
-        curve: "smooth" as "smooth",
-      },
-      grid: {
-        borderColor: "#374151",
-      },
-    },
+      stroke: { curve: "smooth" as const },
+      grid: { borderColor: "#374151" },
+    } as ApexOptions,
   };
 
   const alertesData = {
     series: [
       {
         name: "Alertes",
-        data: [5, 3, 6, 2, 4, 1, 0],
+        data: data?.alertes.map((a: any) => a.total) || [],
       },
     ],
     options: {
-      chart: {
-        type: "bar" as const,
-        height: 350,
-        toolbar: {
-          show: false,
-        },
-      },
-      xaxis: {
-        categories: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
-      },
+      chart: { type: "bar", height: 350, toolbar: { show: false } },
+      xaxis: { categories: data?.alertes.map((a: any) => a.jour) || [] },
       colors: ["#f87171"],
-      grid: {
-        borderColor: "#374151",
-      },
-    },
+      grid: { borderColor: "#374151" },
+    } as ApexOptions,
   };
 
   return (
@@ -71,7 +65,6 @@ export default function StatistiquesPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        {/* Carte du trafic réseau */}
         <div className="bg-gray-900 border border-gray-800 p-5 rounded-lg">
           <div className="flex items-center gap-2 mb-4">
             <Activity size={20} className="text-green-400" />
@@ -85,7 +78,6 @@ export default function StatistiquesPage() {
           />
         </div>
 
-        {/* Carte des alertes */}
         <div className="bg-gray-900 border border-gray-800 p-5 rounded-lg">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle size={20} className="text-red-400" />

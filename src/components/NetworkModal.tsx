@@ -1,135 +1,110 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
+import { useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useForm } from 'react-hook-form';
+import { toast } from 'react-toastify';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as Yup from 'yup';
 
 interface Reseau {
   id?: number;
   nom: string;
   ip: string;
-  statut?: "OK" | "HS" | "Lent" | "Perte";
-  temps?: string;
-  test?: string;
 }
 
-interface Props {
+interface NetworkModalProps {
   reseau: Reseau | null;
   onClose: () => void;
-  onSave: (newReseau: Reseau) => void;
+  onSave: (data: Reseau) => void;
 }
 
-export default function NetworkModal({ reseau, onClose, onSave }: Props) {
-  const [nom, setNom] = useState("");
-  const [ip, setIp] = useState("");
-  const [isTesting, setIsTesting] = useState(false);
-  const [error, setError] = useState("");
+const schema = Yup.object().shape({
+  nom: Yup.string().required('Le nom est requis'),
+  ip: Yup.string()
+    .matches(
+      /^(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$/,
+      'Adresse IP invalide'
+    )
+    .required('L\'adresse IP est requise'),
+});
+
+export default function NetworkModal({ reseau, onClose, onSave }: NetworkModalProps) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<Reseau>({
+    resolver: yupResolver(schema),
+    defaultValues: reseau || { nom: '', ip: '' },
+  });
 
   useEffect(() => {
-    if (reseau) {
-      setNom(reseau.nom);
-      setIp(reseau.ip);
-    } else {
-      setNom("");
-      setIp("");
-    }
-  }, [reseau]);
+    reset(reseau || { nom: '', ip: '' });
+  }, [reseau, reset]);
 
-  const simulateTest = async (ip: string): Promise<{ statut: string; temps: string }> => {
-    // Simule un "test réseau" (remplace plus tard par un appel réel à ton API backend)
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const rand = Math.random();
-        if (rand < 0.1) {
-          resolve({ statut: "HS", temps: "N/A" });
-        } else if (rand < 0.3) {
-          resolve({ statut: "Lent", temps: "180ms" });
-        } else if (rand < 0.5) {
-          resolve({ statut: "Perte", temps: "300ms" });
-        } else {
-          resolve({ statut: "OK", temps: "45ms" });
-        }
-      }, 1500);
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!nom || !ip) return setError("Tous les champs sont requis.");
-
-    setIsTesting(true);
-    setError("");
-
-    try {
-      const { statut, temps } = await simulateTest(ip);
-
-      const newReseau: Reseau = {
-        id: reseau?.id ?? Date.now(),
-        nom,
-        ip,
-        statut: statut as Reseau["statut"],
-        temps,
-        test: new Date().toLocaleString(),
-      };
-
-      onSave(newReseau);
-    } catch (err) {
-      setError("Échec du test de connectivité.");
-    } finally {
-      setIsTesting(false);
-    }
+  const onSubmit = (data: Reseau) => {
+    onSave({ ...reseau, ...data });
+    toast.success('✅ Réseau enregistré avec succès !');
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 transition-all">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white text-black rounded-lg shadow-lg p-6 w-full max-w-md animate-fade-in"
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
       >
-        <h3 className="text-xl font-bold mb-4">
-          {reseau ? "Modifier le réseau" : "Ajouter un réseau"}
-        </h3>
-
-        {error && <div className="text-red-600 mb-2">{error}</div>}
-
-        <div className="mb-4">
-          <label className="block mb-1 font-medium">Nom du réseau</label>
-          <input
-            type="text"
-            value={nom}
-            onChange={(e) => setNom(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
-            required
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block mb-1 font-medium">Adresse IP</label>
-          <input
-            type="text"
-            value={ip}
-            onChange={(e) => setIp(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
-            required
-          />
-        </div>
-
-        <div className="flex justify-end gap-2 mt-6">
-          <button
-            type="button"
-            onClick={onClose}
-            className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded"
-            disabled={isTesting}
-          >
-            Annuler
-          </button>
-          <button
-            type="submit"
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded"
-            disabled={isTesting}
-          >
-            {isTesting ? "Test en cours..." : "Ajouter"}
-          </button>
-        </div>
-      </form>
-    </div>
+        <motion.div
+          className="bg-white rounded-lg p-6 w-full max-w-md"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h2 className="text-xl font-semibold mb-4">
+            {reseau ? 'Modifier le réseau' : 'Ajouter un réseau'}
+          </h2>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Nom</label>
+              <input
+                type="text"
+                {...register('nom')}
+                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+              />
+              {errors.nom && <p className="text-red-500 text-sm mt-1">{errors.nom.message}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Adresse IP</label>
+              <input
+                type="text"
+                {...register('ip')}
+                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+              />
+              {errors.ip && <p className="text-red-500 text-sm mt-1">{errors.ip.message}</p>}
+            </div>
+            <div className="flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Enregistrer
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
